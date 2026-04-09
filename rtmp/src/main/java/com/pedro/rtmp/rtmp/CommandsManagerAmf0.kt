@@ -131,6 +131,16 @@ class CommandsManagerAmf0: CommandsManager() {
       amfEcmaArray.setProperty("stereo", isStereo)
     }
     amfEcmaArray.setProperty("filesize", 0.0)
+    customMetadataAmfObject.forEach { (key, value) ->
+      when (value) {
+        is String -> amfEcmaArray.setProperty(key, value)
+        is Boolean -> amfEcmaArray.setProperty(key, value)
+        is Double -> amfEcmaArray.setProperty(key, value)
+        is Float -> amfEcmaArray.setProperty(key, value.toDouble())
+        is Int -> amfEcmaArray.setProperty(key, value.toDouble())
+        is Long -> amfEcmaArray.setProperty(key, value.toDouble())
+      }
+    }
     metadata.addData(amfEcmaArray)
 
     metadata.writeHeader(socket)
