@@ -194,6 +194,10 @@ class RtmpClient(private val connectChecker: ConnectChecker) {
     commandsManager.customAmfObject = amfObject
   }
 
+  fun setCustomMetadataAmfObject(amfObject: Map<String, Any>) {
+    commandsManager.customMetadataAmfObject = amfObject
+  }
+
   fun setAuthorization(user: String?, password: String?) {
     commandsManager.setAuth(user, password)
   }
