@@ -21,6 +21,7 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
+import android.media.AudioTimestamp;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.os.Build;
@@ -255,7 +256,6 @@ public class MicrophoneManager {
    * @return Object with size and PCM buffer data
    */
   protected Frame read() {
-    long timeStamp = TimeUtils.getCurrentTimeMicro();
     switch (mode) {
         case MICROPHONE -> {
           int size = audioRecord.read(pcmBuffer, 0, pcmBuffer.length);
@@ -263,6 +263,7 @@ public class MicrophoneManager {
             Log.e(TAG, "read error: " + size);
             return null;
           }
+          long timeStamp = getAudioTimestamp(audioRecord);
           audioUtils.applyVolume(pcmBuffer, microphoneVolume);
           return new Frame(muted ? pcmBufferMuted : customAudioEffect.process(pcmBuffer), 0, size, timeStamp);
         }
@@ -272,6 +273,7 @@ public class MicrophoneManager {
             Log.e(TAG, "read error: " + size);
             return null;
           }
+          long timeStamp = getAudioTimestamp(audioRecordDevice);
           audioUtils.applyVolume(pcmBufferDevice, internalVolume);
           return new Frame(muted ? pcmBufferMuted : customAudioEffect.process(pcmBufferDevice), 0, size, timeStamp);
         }
@@ -286,11 +288,22 @@ public class MicrophoneManager {
             Log.e(TAG, "read error: " + sizeInternal);
             return null;
           }
+          long timeStamp = getAudioTimestamp(audioRecord);
           audioUtils.applyVolumeAndMix(pcmBuffer, microphoneVolume, pcmBufferDevice, internalVolume, pcmBufferMix);
           return new Frame(muted ? pcmBufferMuted : customAudioEffect.process(pcmBufferMix), 0, size, timeStamp);
         }
         default -> { return null; }
     }
+  }
+
+  private long getAudioTimestamp(AudioRecord record) {
+    if (record != null) {
+      AudioTimestamp timestamp = new AudioTimestamp();
+      if (record.getTimestamp(timestamp, AudioTimestamp.TIMEBASE_BOOTTIME) == AudioRecord.SUCCESS) {
+        return timestamp.nanoTime / 1000;
+      }
+    }
+    return TimeUtils.getCurrentTimeMicro();
   }
 
   /**
